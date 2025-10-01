@@ -12,6 +12,4 @@ Route::post('githook', function (Request $request, GitHook $hook) {
     } catch (GitHookException $exception) {
         throw new AccessDeniedHttpException($exception->getMessage());
     }
-
-    return response();
 });

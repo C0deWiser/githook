@@ -2,7 +2,6 @@
 
 namespace Codewiser\Githook;
 
-use Closure;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
