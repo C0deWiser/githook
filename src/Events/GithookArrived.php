@@ -2,6 +2,7 @@
 
 namespace Codewiser\Githook\Events;
 
+use Codewiser\Githook\Concerns\GitRepository;
 use Codewiser\Githook\Concerns\Payload;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -15,8 +16,11 @@ class GithookArrived
 
     /**
      * Create a new event instance.
+     *
+     * @param  class-string<GitRepository>  $provider
+     * @param  Payload  $payload
      */
-    public function __construct(public Payload $payload)
+    public function __construct(public string $provider, public Payload $payload)
     {
         //
     }

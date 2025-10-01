@@ -2,13 +2,12 @@
 
 namespace Codewiser\Githook\Services;
 
-use Codewiser\Githook\Concerns\Carrier;
+use Codewiser\Githook\Concerns\GitRepository;
 use Codewiser\Githook\Concerns\Payload;
-use Codewiser\Githook\Concerns\Validator;
 use Codewiser\Githook\Exceptions\GitHookException;
 use Symfony\Component\HttpFoundation\Request;
 
-class Unknown implements Validator, Carrier
+class Unknown implements GitRepository
 {
     public function validate(Request $request): void
     {

@@ -2,19 +2,21 @@
 
 namespace Codewiser\Githook;
 
-use Codewiser\Githook\Concerns\Carrier;
+use Codewiser\Githook\Concerns\GitRepository;
 use Codewiser\Githook\Concerns\Payload;
-use Codewiser\Githook\Concerns\Validator;
 use Codewiser\Githook\Events\GithookArrived;
 use Codewiser\Githook\Exceptions\GitHookException;
 use Codewiser\Githook\Services\GitHub;
 use Codewiser\Githook\Services\GitLab;
 use Codewiser\Githook\Services\Unknown;
 use Illuminate\Contracts\Events\Dispatcher;
+use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\HttpFoundation\Request;
 
 class GitHook
 {
+    use LoggerAwareTrait;
+
     protected ?Request $request = null;
     protected ?Dispatcher $events = null;
 
@@ -28,10 +30,10 @@ class GitHook
      */
     public function handle(Request $request): Payload
     {
-        $this->setRequest($request);
-
-        $this->validate();
-        return $this->payload();
+        return $this
+            ->setRequest($request)
+            ->validate()
+            ->toPayload();
     }
 
     /**
@@ -68,7 +70,7 @@ class GitHook
         return $this;
     }
 
-    public function service(): Validator&Carrier
+    public function service(): GitRepository
     {
         if ($this->getRequest()->headers->has('X-Gitlab-Token')) {
             return new GitLab(config('services.githook.secret'));
@@ -84,16 +86,31 @@ class GitHook
     /**
      * @throws GitHookException
      */
-    public function validate(): void
+    public function validate(): static
     {
-        $this->service()->validate($this->getRequest());
+        $service = $this->service();
+
+        try {
+            $service->validate($this->getRequest());
+        } catch (GitHookException $e) {
+
+            $this->logger?->error(class_basename($service).' '.$e->getMessage());
+
+            throw $e;
+        }
+
+        return $this;
     }
 
-    public function payload(): Payload
+    public function toPayload(): Payload
     {
-        $payload = $this->service()->payload($this->getRequest());
+        $service = $this->service();
 
-        $this->getDispatcher()?->dispatch(new GithookArrived($payload));
+        $payload = $service->payload($this->getRequest());
+
+        $this->logger?->info(class_basename($service).' '.$payload->event, $payload->data);
+
+        $this->getDispatcher()?->dispatch(new GithookArrived($service::class, $payload));
 
         return $payload;
     }
